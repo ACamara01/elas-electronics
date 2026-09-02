@@ -37,6 +37,7 @@ export default function Login({ onLogin }) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             autoFocus
+            placeholder="Enter your email"
             required
           />
         </label>
@@ -47,6 +48,7 @@ export default function Login({ onLogin }) {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
             required
           />
         </label>
