@@ -9,4 +9,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    // Keep the login in sessionStorage instead of localStorage:
+    // it survives a page refresh, but is forgotten when the tab or browser is closed
+    storage: window.sessionStorage,
+  },
+});
+
