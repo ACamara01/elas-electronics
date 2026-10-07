@@ -13,6 +13,7 @@ import { exportSalesPDF } from "./pdfExport.js";
 import { printReceipt } from "./receipt.js";
 import { getCurrentSession, onAuthChange, signOut } from "./auth.js";
 import Login from "./Login.jsx";
+import Invoices from "./Invoices.jsx";
 
 const SHOP_NAME = "Elas Electronics";
 
@@ -57,9 +58,9 @@ function getInitials(email) {
   if (!email) return "?";
   const name = email.split("@")[0]; // the part before the @
   const parts = name
-    .split(/[._-]+/)                        // split on . _ -
+    .split(/[._-]+/) // split on . _ -
     .map((p) => p.replace(/[^a-zA-Z]/g, "")) // remove digits like the 01 in camara01
-    .filter(Boolean);                        // drop empty pieces
+    .filter(Boolean); // drop empty pieces
 
   if (parts.length === 0) return "?";
   if (parts.length === 1) return parts[0][0].toUpperCase(); // only one name: one letter
@@ -163,7 +164,9 @@ export default function App() {
         const canvas = document.createElement("canvas");
         canvas.width = size;
         canvas.height = size;
-        canvas.getContext("2d").drawImage(img, sx, sy, min, min, 0, 0, size, size);
+        canvas
+          .getContext("2d")
+          .drawImage(img, sx, sy, min, min, 0, 0, size, size);
 
         const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
         setAvatar(dataUrl);
@@ -180,7 +183,11 @@ export default function App() {
      ITEMS (Item Setup tab)
      ===================================================================== */
 
-  const [itemForm, setItemForm] = useState({ name: "", buyPrice: "", sellPrice: "" });
+  const [itemForm, setItemForm] = useState({
+    name: "",
+    buyPrice: "",
+    sellPrice: "",
+  });
   const [editingItemId, setEditingItemId] = useState(null); // null = adding new
   const [itemSaving, setItemSaving] = useState(false);
 
@@ -200,12 +207,20 @@ export default function App() {
     setItemSaving(true);
     try {
       if (editingItemId) {
-        const updated = await updateItemRow(editingItemId, { name, buyPrice, sellPrice });
-        setItems((prev) => prev.map((it) => (it.id === editingItemId ? updated : it)));
+        const updated = await updateItemRow(editingItemId, {
+          name,
+          buyPrice,
+          sellPrice,
+        });
+        setItems((prev) =>
+          prev.map((it) => (it.id === editingItemId ? updated : it))
+        );
       } else {
         const created = await insertItem({ name, buyPrice, sellPrice });
         // Keep the list sorted A-Z by name
-        setItems((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+        setItems((prev) =>
+          [...prev, created].sort((a, b) => a.name.localeCompare(b.name))
+        );
       }
       resetItemForm();
     } catch (err) {
@@ -226,7 +241,12 @@ export default function App() {
   }
 
   async function deleteItem(id) {
-    if (!confirm("Delete this item? Existing sales records will keep their own saved prices.")) return;
+    if (
+      !confirm(
+        "Delete this item? Existing sales records will keep their own saved prices."
+      )
+    )
+      return;
     try {
       await deleteItemRow(id);
       setItems((prev) => prev.filter((it) => it.id !== id));
@@ -252,7 +272,13 @@ export default function App() {
 
   // Clear the form; the date goes back to the selected month's default
   function resetSaleForm() {
-    setSaleForm({ date: defaultDateForMonth(month), itemId: "", itemName: "", qty: "1", sellPrice: "" });
+    setSaleForm({
+      date: defaultDateForMonth(month),
+      itemId: "",
+      itemName: "",
+      qty: "1",
+      sellPrice: "",
+    });
     setEditingSaleId(null);
   }
 
@@ -267,7 +293,9 @@ export default function App() {
 
   // As the user types an item name, auto-fill the price if it matches a saved item
   function onItemNameInput(name) {
-    const match = items.find((it) => it.name.toLowerCase() === name.toLowerCase());
+    const match = items.find(
+      (it) => it.name.toLowerCase() === name.toLowerCase()
+    );
     if (match) {
       setSaleForm((f) => ({
         ...f,
@@ -307,7 +335,9 @@ export default function App() {
     try {
       if (editingSaleId) {
         const updated = await updateSaleRow(editingSaleId, saleData);
-        setSales((prev) => prev.map((s) => (s.id === editingSaleId ? updated : s)));
+        setSales((prev) =>
+          prev.map((s) => (s.id === editingSaleId ? updated : s))
+        );
       } else {
         const created = await insertSale(saleData);
         setSales((prev) => [...prev, created]);
@@ -346,7 +376,10 @@ export default function App() {
 
   // Only the sales in the selected month, oldest first
   const monthSales = useMemo(
-    () => sales.filter((s) => s.date.slice(0, 7) === month).sort((a, b) => a.date.localeCompare(b.date)),
+    () =>
+      sales
+        .filter((s) => s.date.slice(0, 7) === month)
+        .sort((a, b) => a.date.localeCompare(b.date)),
     [sales, month]
   );
 
@@ -362,10 +395,9 @@ export default function App() {
   }, [monthSales]);
 
   // Print a receipt for one sale (for the buyer)
-function handlePrint(sale) {
-  printReceipt({ shopName: SHOP_NAME, sale });
-}
-
+  function handlePrint(sale) {
+    printReceipt({ shopName: SHOP_NAME, sale });
+  }
 
   function downloadPDF() {
     if (monthSales.length === 0) {
@@ -428,10 +460,16 @@ function handlePrint(sale) {
             {menuOpen && (
               <div className="profile-menu">
                 <p className="profile-email">{session.user?.email}</p>
-                <button className="link-btn" onClick={() => fileInputRef.current.click()}>
+                <button
+                  className="link-btn"
+                  onClick={() => fileInputRef.current.click()}
+                >
                   {avatar ? "Change photo" : "Upload photo"}
                 </button>
-                <button className="btn btn-secondary logout-btn" onClick={handleLogout}>
+                <button
+                  className="btn btn-secondary logout-btn"
+                  onClick={handleLogout}
+                >
                   Log out
                 </button>
               </div>
@@ -458,6 +496,14 @@ function handlePrint(sale) {
           >
             Sales Log
           </button>
+
+          <button
+            className={`tab-btn${tab === "invoices" ? " active" : ""}`}
+            onClick={() => setTab("invoices")}
+          >
+            Invoices
+          </button>
+
           <button
             className={`tab-btn${tab === "items" ? " active" : ""}`}
             onClick={() => setTab("items")}
@@ -472,12 +518,18 @@ function handlePrint(sale) {
         {dataLoading && <p className="hint">Loading your data…</p>}
 
         {/* ---------- ITEM SETUP TAB ---------- */}
+
+        {!dataLoading && tab === "invoices" && (
+          <Invoices shopName={SHOP_NAME} items={items} />
+        )}
+
         {!dataLoading && tab === "items" && (
           <section className="panel">
             <h2>Items</h2>
             <p className="hint">
-              Set up each product with its wholesale (buying) price and your usual selling price.
-              This is used to auto-fill and calculate profit when you log a sale.
+              Set up each product with its wholesale (buying) price and your
+              usual selling price. This is used to auto-fill and calculate
+              profit when you log a sale.
             </p>
 
             {/* Add / edit item form */}
@@ -486,7 +538,9 @@ function handlePrint(sale) {
                 type="text"
                 placeholder="Item name"
                 value={itemForm.name}
-                onChange={(e) => setItemForm((f) => ({ ...f, name: e.target.value }))}
+                onChange={(e) =>
+                  setItemForm((f) => ({ ...f, name: e.target.value }))
+                }
                 required
               />
               <input
@@ -495,7 +549,9 @@ function handlePrint(sale) {
                 min="0"
                 placeholder="Buying price"
                 value={itemForm.buyPrice}
-                onChange={(e) => setItemForm((f) => ({ ...f, buyPrice: e.target.value }))}
+                onChange={(e) =>
+                  setItemForm((f) => ({ ...f, buyPrice: e.target.value }))
+                }
                 required
               />
               <input
@@ -504,14 +560,28 @@ function handlePrint(sale) {
                 min="0"
                 placeholder="Selling price"
                 value={itemForm.sellPrice}
-                onChange={(e) => setItemForm((f) => ({ ...f, sellPrice: e.target.value }))}
+                onChange={(e) =>
+                  setItemForm((f) => ({ ...f, sellPrice: e.target.value }))
+                }
                 required
               />
-              <button type="submit" className="btn btn-primary" disabled={itemSaving}>
-                {itemSaving ? "Saving…" : editingItemId ? "Save changes" : "Add item"}
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={itemSaving}
+              >
+                {itemSaving
+                  ? "Saving…"
+                  : editingItemId
+                  ? "Save changes"
+                  : "Add item"}
               </button>
               {editingItemId && (
-                <button type="button" className="btn btn-secondary" onClick={resetItemForm}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={resetItemForm}
+                >
                   Cancel
                 </button>
               )}
@@ -542,10 +612,22 @@ function handlePrint(sale) {
                       <td>{it.name}</td>
                       <td>{it.buyPrice.toFixed(2)}</td>
                       <td>{it.sellPrice.toFixed(2)}</td>
-                      <td className="pos">{(it.sellPrice - it.buyPrice).toFixed(2)}</td>
+                      <td className="pos">
+                        {(it.sellPrice - it.buyPrice).toFixed(2)}
+                      </td>
                       <td className="actions">
-                        <button className="link-btn" onClick={() => editItem(it)}>Edit</button>
-                        <button className="link-btn danger" onClick={() => deleteItem(it.id)}>Delete</button>
+                        <button
+                          className="link-btn"
+                          onClick={() => editItem(it)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="link-btn danger"
+                          onClick={() => deleteItem(it.id)}
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -562,7 +644,10 @@ function handlePrint(sale) {
             <div className="sales-toolbar">
               <div>
                 <h2>Sales Log</h2>
-                <p className="hint">Log each sale below. Totals update automatically for the selected month.</p>
+                <p className="hint">
+                  Log each sale below. Totals update automatically for the
+                  selected month.
+                </p>
               </div>
               <div className="toolbar-actions">
                 <label className="month-picker">
@@ -587,7 +672,9 @@ function handlePrint(sale) {
                 value={saleForm.date}
                 min={`${month}-01`}
                 max={lastDateOfMonth(month)}
-                onChange={(e) => setSaleForm((f) => ({ ...f, date: e.target.value }))}
+                onChange={(e) =>
+                  setSaleForm((f) => ({ ...f, date: e.target.value }))
+                }
                 required
               />
               <input
@@ -610,7 +697,9 @@ function handlePrint(sale) {
                 step="1"
                 placeholder="Qty"
                 value={saleForm.qty}
-                onChange={(e) => setSaleForm((f) => ({ ...f, qty: e.target.value }))}
+                onChange={(e) =>
+                  setSaleForm((f) => ({ ...f, qty: e.target.value }))
+                }
                 required
               />
               <input
@@ -619,14 +708,28 @@ function handlePrint(sale) {
                 step="0.01"
                 placeholder="Price"
                 value={saleForm.sellPrice}
-                onChange={(e) => setSaleForm((f) => ({ ...f, sellPrice: e.target.value }))}
+                onChange={(e) =>
+                  setSaleForm((f) => ({ ...f, sellPrice: e.target.value }))
+                }
                 required
               />
-              <button type="submit" className="btn btn-primary" disabled={saleSaving}>
-                {saleSaving ? "Saving…" : editingSaleId ? "Save changes" : "Add sale"}
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={saleSaving}
+              >
+                {saleSaving
+                  ? "Saving…"
+                  : editingSaleId
+                  ? "Save changes"
+                  : "Add sale"}
               </button>
               {editingSaleId && (
-                <button type="button" className="btn btn-secondary" onClick={resetSaleForm}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={resetSaleForm}
+                >
                   Cancel
                 </button>
               )}
@@ -668,12 +771,29 @@ function handlePrint(sale) {
                       <td>{s.qty}</td>
                       <td>{s.sellPrice.toFixed(2)}</td>
                       <td>{s.total.toFixed(2)}</td>
-                      <td className={s.profit >= 0 ? "pos" : "neg"}>{s.profit.toFixed(2)}</td>
+                      <td className={s.profit >= 0 ? "pos" : "neg"}>
+                        {s.profit.toFixed(2)}
+                      </td>
                       <td className="actions">
-                      <button className="link-btn" onClick={() => handlePrint(s)}>Print</button>
+                        <button
+                          className="link-btn preview"
+                          onClick={() => handlePrint(s)}
+                        >
+                          Print
+                        </button>
 
-                        <button className="link-btn" onClick={() => editSale(s)}>Edit</button>
-                        <button className="link-btn danger" onClick={() => deleteSale(s.id)}>Delete</button>
+                        <button
+                          className="link-btn"
+                          onClick={() => editSale(s)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="link-btn danger"
+                          onClick={() => deleteSale(s.id)}
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -701,15 +821,15 @@ function handlePrint(sale) {
       {/* ---------- FOOTER ---------- */}
       <footer className="app-footer">
         <div className="wrap">
-          <span>© {new Date().getFullYear()} {"Alhagie Camara"}</span>
+          <span>
+            © {new Date().getFullYear()} {"Alhagie Camara"}
+          </span>
           {/* <span>Data stored securely in Supabase</span> */}
         </div>
       </footer>
     </div>
   );
 }
-
-
 
 // import { useState, useEffect, useMemo } from "react";
 // import {fetchItems, insertItem, updateItemRow, deleteItemRow, fetchSales, insertSale, updateSaleRow, deleteSaleRow, } from "./db.js";
@@ -863,7 +983,7 @@ function handlePrint(sale) {
 //     setSaleForm({ date: defaultDateForMonth(month), itemId: "", itemName: "", qty: "1", sellPrice: "" });
 //     setEditingSaleId(null);
 //   }
-  
+
 //   // When the month changes, move the date field into that month
 //   function handleMonthChange(value) {
 //     if (!value) return; // the month picker was cleared
@@ -1144,7 +1264,7 @@ function handlePrint(sale) {
 //   onChange={(e) => setSaleForm((f) => ({ ...f, date: e.target.value }))}
 //   required
 // />
-             
+
 //               {/* <input
 //                 type="date"
 //                 value={saleForm.date}
@@ -1261,4 +1381,3 @@ function handlePrint(sale) {
 //     </div>
 //   );
 // }
-
