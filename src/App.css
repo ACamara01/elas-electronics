@@ -3,7 +3,8 @@
 /* =====================================================
    THEME VARIABLES + BASE
    ===================================================== */
-.site {
+.site,
+  .login-screen {
   --blue: #2954e6;
   --blue-dark: #1d3fb8;
   --blue-light: #eef2ff;
@@ -19,7 +20,8 @@
   min-height: 100vh;
 }
 
-.site * { box-sizing: border-box; }
+.site *,
+.login-screen * { box-sizing: border-box; }
 
 .wrap { margin: 0 auto; padding: 0 24px; }
 
@@ -132,11 +134,152 @@ border-radius: 16px;
   width: 100%;
   border: 1px solid var(--border);
 }
-
 /* =====================================================
    LOGIN
    ===================================================== */
+
+/* Full-screen deep blue background */
 .login-screen {
+  position: relative;
+  overflow: hidden;            /* keeps the glow circles inside the screen */
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: linear-gradient(135deg, #3b6bff 0%, #5b8cff 55%, #8fb1ff 100%);
+  font-family: 'Inter', sans-serif;
+}
+
+/* Two soft glow circles that drift slowly behind the card */
+.login-screen::before,
+.login-screen::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;        /* clicks go through to the form */
+}
+
+/* Light blue glow, top left */
+.login-screen::before {
+  width: 460px;
+  height: 460px;
+  top: -120px;
+  left: -100px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 70%);
+  
+  animation: glow-one 18s ease-in-out infinite alternate;
+}
+
+/* Dark blue glow, bottom right */
+.login-screen::after {
+  width: 520px;
+  height: 520px;
+  bottom: -160px;
+  right: -120px;
+  background: radial-gradient(circle, rgba(41, 84, 230, 0.6) 0%, rgba(41, 84, 230, 0) 70%);
+  animation: glow-two 22s ease-in-out infinite alternate;
+}
+
+@keyframes glow-one {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(180px, 120px) scale(1.15); }
+}
+
+@keyframes glow-two {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(-200px, -140px) scale(1.1); }
+}
+
+/* Smaller circles on phones */
+@media (max-width: 640px) {
+  .login-screen::before { width: 300px; height: 300px; }
+  .login-screen::after  { width: 340px; height: 340px; }
+}
+
+/* People who set "reduce motion" on their device get a still background */
+@media (prefers-reduced-motion: reduce) {
+  .login-screen::before,
+  .login-screen::after { animation: none; }
+}
+
+/* White card, above the glow circles */
+.login-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 380px;
+  padding: 36px 32px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(30, 64, 175, 0.25);
+}
+
+.login-card h1 {
+  margin: 0 0 4px;
+  font-size: 24px;
+  color: var(--ink);
+}
+
+.login-card > p {
+  margin: 0 0 24px;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.login-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.login-card input {
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--ink);
+  background: #fff;
+}
+
+.login-card input:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(41, 84, 230, 0.15);
+}
+
+.login-error {
+  margin: -6px 0 16px;
+  font-size: 13px;
+  color: var(--red);
+}
+
+/* Sign in button (styled here directly, so it never depends on other classes) */
+.login-submit {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14.5px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #fff;
+  background: var(--blue);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.login-submit:hover { background: var(--blue-dark); }
+.login-submit:disabled { opacity: 0.7; cursor: default; }
+/* =====================================================
+   LOGIN
+   ===================================================== */
+/* .login-screen {
   background: #f7f9fc;
   min-height: 100vh;
   display: flex;
@@ -176,7 +319,7 @@ border-radius: 16px;
   font-size: 13px;
   margin: -6px 0 16px;
 }
-.login-submit { width: 100%; padding: 12px; font-size: 14.5px; }
+.login-submit { width: 100%; padding: 12px; font-size: 14.5px; } */
 
 /* =====================================================
    TABS
@@ -435,3 +578,86 @@ tfoot td {
 
 .link-btn.whatsapp { color: var(--whatsapp); }
 .link-btn.preview { color: var(--preview); }
+
+/* =====================================================
+   RESPONSIVE TABLES
+   On small screens each row becomes a card (label left,
+   value right) instead of scrolling sideways
+   ===================================================== */
+   @media (max-width: 640px) {
+    /* The table parts stop behaving like a table */
+    .table-wrap table,
+    .table-wrap thead,
+    .table-wrap tbody,
+    .table-wrap tfoot,
+    .table-wrap tr {
+      display: block;
+    }
+  
+    /* The column headings are replaced by the labels inside each card */
+    .table-wrap thead {
+      display: none;
+    }
+  
+    /* One card per row */
+    .table-wrap tbody tr,
+    .table-wrap tfoot tr {
+      margin-bottom: 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+    }
+  
+    /* Each cell: label on the left, value on the right */
+    .table-wrap td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      text-align: right;
+      white-space: normal;
+    }
+  
+    .table-wrap td:last-child {
+      border-bottom: none;
+    }
+  
+    /* The label comes from the data-label attribute added in the JSX */
+    .table-wrap td[data-label]::before {
+      content: attr(data-label);
+      font-weight: 600;
+      color: var(--muted);
+      text-align: left;
+    }
+  
+    /* "No sales yet" style messages stay centered */
+    .table-wrap td.empty {
+      display: block;
+      text-align: center;
+    }
+  
+    /* Edit / Delete / Print buttons: right-aligned, easier to tap */
+    .table-wrap td.actions {
+      justify-content: flex-end;
+      gap: 18px;
+    }
+    .table-wrap td.actions .link-btn {
+      padding: 6px 2px;
+      font-size: 14px;
+    }
+  
+    /* Totals card */
+    .table-wrap tfoot td {
+      border-top: none;
+    }
+    .table-wrap tfoot td:first-child {
+      justify-content: flex-start;
+      font-weight: 800;
+    }
+    .table-wrap tfoot td:empty {
+      display: none; /* the empty spacer cell */
+    }
+  }

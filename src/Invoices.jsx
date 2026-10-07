@@ -2,14 +2,12 @@
 // The "Invoices" tab: prepare an invoice for a customer and keep a saved copy.
 // It loads and saves its own data, so App.jsx barely changes.
 
-import { useState, useEffect } from "react";
-import {
-  fetchInvoices,
-  insertInvoice,
-  updateInvoiceRow,
-  deleteInvoiceRow,
-} from "./invoicesDB.js";
+import { useState } from "react";
+// add this import at the top
+import { useItems } from "./queries.js";
+import { fetchInvoices, insertInvoice, updateInvoiceRow, deleteInvoiceRow, } from "./invoicesDB.js";
 import { printInvoice, shareInvoiceWhatsApp } from "./invoicePrint.js";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 
 /* =====================================================================
@@ -17,7 +15,7 @@ import { printInvoice, shareInvoiceWhatsApp } from "./invoicePrint.js";
    ===================================================================== */
 
 // Edit this list to change the payment methods in the dropdown
-const PAYMENT_METHODS = ["Cash", "Mobile money", "Bank transfer", "Card"];
+const PAYMENT_METHODS = ["Cash", "Wave", "APS", "Bank transfer", "Card"];
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -62,11 +60,31 @@ function formatInvoiceNo(shopName, n) {
    COMPONENT
    ===================================================================== */
 
-export default function Invoices({ shopName, items }) {
+// export default function Invoices({ shopName, items }) {
+// change the first line of the component: remove "items" from the props...
+export default function Invoices({ shopName }) {
+  // ...and add this as the first line inside it
+  const { data: items = [] } = useItems();
   // Saved invoices
-  const [invoices, setInvoices] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  // const [invoices, setInvoices] = useState([]);
+  // const [loading, setLoading] = useState(true);
+  // const [error, setError] = useState("");
+  // Saved invoices (React Query: cached, refreshed quietly in the background)
+  const queryClient = useQueryClient();
+  const invoicesQuery = useQuery({
+    queryKey: ["invoices"],
+    queryFn: () => fetchInvoices(),
+  });
+
+  const invoices = invoicesQuery.data ?? [];
+  const loading = invoicesQuery.isLoading; // true only on the very first load
+  const error = invoicesQuery.error?.message || "";
+
+  // Your save / edit / delete code calls setInvoices.
+  // This helper updates the React Query cache instead, so that code stays unchanged.
+  function setInvoices(updater) {
+    queryClient.setQueryData(["invoices"], (old = []) => updater(old));
+  }
 
   // The form
   const [form, setForm] = useState(emptyForm());
@@ -74,22 +92,22 @@ export default function Invoices({ shopName, items }) {
   const [saving, setSaving] = useState(false);
 
   // Load saved invoices when the tab opens
-  useEffect(() => {
-    let cancelled = false;
-    fetchInvoices()
-      .then((data) => {
-        if (!cancelled) setInvoices(data);
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err.message || "Failed to load invoices.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // useEffect(() => {
+  //   let cancelled = false;
+  //   fetchInvoices()
+  //     .then((data) => {
+  //       if (!cancelled) setInvoices(data);
+  //     })
+  //     .catch((err) => {
+  //       if (!cancelled) setError(err.message || "Failed to load invoices.");
+  //     })
+  //     .finally(() => {
+  //       if (!cancelled) setLoading(false);
+  //     });
+  //   return () => {
+  //     cancelled = true;
+  //   };
+  // }, []);
 
   /* ---------- FORM HELPERS ---------- */
 
@@ -212,31 +230,31 @@ export default function Invoices({ shopName, items }) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
   // The details the print and share functions need for one invoice
-function details(inv) {
-  return {
-    shopName,
-    invoice: inv,
-    invoiceNo: formatInvoiceNo(shopName, inv.invoiceNo),
-  };
-}
-
-// Open the invoice preview. If something fails, show an alert instead of doing nothing
-function previewInvoice(inv) {
-  try {
-    printInvoice(details(inv));
-  } catch (err) {
-    alert("Could not open the preview: " + err.message);
+  function details(inv) {
+    return {
+      shopName,
+      invoice: inv,
+      invoiceNo: formatInvoiceNo(shopName, inv.invoiceNo),
+    };
   }
-}
 
-// Open WhatsApp with the invoice message
-function shareInvoice(inv) {
-  try {
-    shareInvoiceWhatsApp(details(inv));
-  } catch (err) {
-    alert("Could not open WhatsApp: " + err.message);
+  // Open the invoice preview. If something fails, show an alert instead of doing nothing
+  function previewInvoice(inv) {
+    try {
+      printInvoice(details(inv));
+    } catch (err) {
+      alert("Could not open the preview: " + err.message);
+    }
   }
-}
+
+  // Open WhatsApp with the invoice message
+  function shareInvoice(inv) {
+    try {
+      shareInvoiceWhatsApp(details(inv));
+    } catch (err) {
+      alert("Could not open WhatsApp: " + err.message);
+    }
+  }
 
   async function deleteInvoice(id) {
     if (!confirm("Delete this invoice? This cannot be undone.")) return;
@@ -425,12 +443,12 @@ function shareInvoice(inv) {
                 const bal = inv.total - inv.paid;
                 return (
                   <tr key={inv.id}>
-                    <td>{formatInvoiceNo(shopName, inv.invoiceNo)}</td>
-                    <td>{inv.date}</td>
-                    <td>{inv.customerName}</td>
-                    <td>{inv.total.toFixed(2)}</td>
-                    <td>{inv.paid.toFixed(2)}</td>
-                    <td className={bal > 0 ? "neg" : "pos"}>{bal.toFixed(2)}</td>
+                    <td data-label="Invoice">{formatInvoiceNo(shopName, inv.invoiceNo)}</td>
+                    <td data-label="Date">{inv.date}</td>
+                    <td data-label="Customer">{inv.customerName}</td>
+                    <td data-label="Total">{inv.total.toFixed(2)}</td>
+                    <td data-label="Paid">{inv.paid.toFixed(2)}</td>
+                    <td data-label="Balance" className={bal > 0 ? "neg" : "pos"}>{bal.toFixed(2)}</td>
                     <td className="actions">
                       <button className="link-btn preview" onClick={() => previewInvoice(inv)}>
                         Preview
